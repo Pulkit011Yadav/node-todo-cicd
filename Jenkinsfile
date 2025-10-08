@@ -1,34 +1,37 @@
-pipeline{
-    agent { label 'dev-server' }
-    
-    stages{
-        stage("Code Clone"){
-            steps{
-                echo "Code Clone Stage"
-                git url: "https://github.com/LondheShubham153/node-todo-cicd.git", branch: "master"
+pipeline {
+    agent { label 'worker' }
+
+    stages {
+        stage("code") {
+            steps {
+                git url: "https://github.com/Pulkit011Yadav/node-todo-cicd.git", branch: "master"
             }
         }
-        stage("Code Build & Test"){
-            steps{
-                echo "Code Build Stage"
-                sh "docker build -t node-app ."
+
+        stage("build") {
+            steps {
+                sh "docker build -t notes-app:latest ."
             }
         }
-        stage("Push To DockerHub"){
-            steps{
+
+        stage("push to dockerhub") {
+            steps {
                 withCredentials([usernamePassword(
-                    credentialsId:"dockerHubCreds",
-                    usernameVariable:"dockerHubUser", 
-                    passwordVariable:"dockerHubPass")]){
-                sh 'echo $dockerHubPass | docker login -u $dockerHubUser --password-stdin'
-                sh "docker image tag node-app:latest ${env.dockerHubUser}/node-app:latest"
-                sh "docker push ${env.dockerHubUser}/node-app:latest"
+                    credentialsId: "dockerHUBCreds",
+                    usernameVariable: "dockerHUBUser",
+                    passwordVariable: "dockerHUBPass"
+                )]) {
+                    sh "echo $dockerHUBPass | docker login -u $dockerHUBUser --password-stdin"
+                    sh "docker image tag notes-app:latest ${env.dockerHUBUser}/notes-app:latest"
+                    sh "docker push ${env.dockerHUBUser}/notes-app:latest"
                 }
             }
         }
-        stage("Deploy"){
-            steps{
-                sh "docker compose down && docker compose up -d --build"
+
+        stage("deploy") {
+            steps {
+                sh "docker compose down || true"
+                sh "docker compose up -d --build"
             }
         }
     }
