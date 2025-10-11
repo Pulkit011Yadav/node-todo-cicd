@@ -2,6 +2,6 @@ version: '3.9'
 
 services:
   web:
-    image: pulkit011yadav/notes-app:latest
+    image: pulkit011yadav/notes-app:test
     ports:
-      - "8000:8000"
+      - "8002:8000"
