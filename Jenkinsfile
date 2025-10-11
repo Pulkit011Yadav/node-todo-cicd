@@ -10,14 +10,14 @@ pipeline {
 
         stage("build") {
             steps {
-                sh "docker build -t notes-app:test ."
+                sh "docker build -t notes-app:tes ."
             }
         }
-
+        
         stage("deploy") {
             steps {
-                sh "docker rm -f notes-app-test || true"
-                sh "docker run -d -p 8002:8000 --name notes-app-test notes-app:test"
+                sh "docker compose down || true"
+                sh "docker compose up -d --build"
             }
         }
     }
