@@ -2,34 +2,21 @@ pipeline {
     agent { label 'worker' }
 
     stages {
-        stage("code") {
+        stage("Checkout") {
             steps {
-                git url: "https://github.com/Pulkit011Yadav/node-todo-cicd.git", branch: "master"
+                git url: "https://github.com/Pulkit011Yadav/node-todo-cicd.git", branch: "test"
             }
         }
 
-        stage("build") {
+        stage("Build Docker") {
             steps {
-                sh "docker build -t notes-app:latest ."
+                sh "docker build -t notes-app:test ."
             }
         }
 
-        stage("push to dockerhub") {
+        stage("Deploy") {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: "dockerHUBCreds",
-                    usernameVariable: "dockerHUBUser",
-                    passwordVariable: "dockerHUBPass"
-                )]) {
-                    sh "echo $dockerHUBPass | docker login -u $dockerHUBUser --password-stdin"
-                    sh "docker image tag notes-app:latest ${env.dockerHUBUser}/notes-app:latest"
-                    sh "docker push ${env.dockerHUBUser}/notes-app:latest"
-                }
-            }
-        }
-
-        stage("deploy") {
-            steps {
+                sh "sed -i 's/8000:8000/8002:8000/' docker-compose.yaml"
                 sh "docker compose down || true"
                 sh "docker compose up -d --build"
             }
