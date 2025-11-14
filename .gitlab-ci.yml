@@ -1,0 +1,55 @@
+variables:
+  IMAGE_NAME: nodesapp
+  IMAGE_TAG: latest
+stages:
+  - build
+  - push
+  - pull
+  - deploy
+default:
+  artifacts:
+    when: always
+    paths:
+      - logs/
+    expire_in: 1 week
+build_job:
+  stage: build
+  script:
+    - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+    - mkdir -p logs
+    - echo "image is successfully build" > logs/app.log
+  tags:
+    - dev
+push_job:
+  stage: push
+  dependencies:
+    - build_job
+  script:
+    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+    - docker tag $IMAGE_NAME:$IMAGE_TAG $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+    - docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+    - docker rmi $IMAGE_NAME:$IMAGE_TAG || true
+    - docker rmi $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG || true
+    - docker logout
+    - echo "push is done" >> logs/app.log
+  tags:  
+    - dev
+pull_job:
+  stage: pull
+  dependencies:
+    - push_job
+  script:
+    - docker pull $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG
+    - echo "pull is done" >> logs/app.log
+  tags:
+    - dev
+deploy_job:
+  stage: deploy
+  dependencies:
+    - pull_job
+  script:
+    - docker compose down || true
+    - docker compose up -d --build
+    - echo "application is live now" >> logs/app.log
+  tags:
+    - dev
