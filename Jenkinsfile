@@ -1,37 +1,38 @@
 pipeline {
     agent { label 'worker' }
-
+    environment {
+        IMAGE_NAME = "nodesapp"
+        TAG = "latest"
+    }
     stages {
         stage("code") {
             steps {
                 git url: "https://github.com/Pulkit011Yadav/node-todo-cicd.git", branch: "master"
             }
         }
-
         stage("build") {
             steps {
-                sh "docker build -t notes-app:latest ."
+                sh "docker build -t ${IMAGE_NAME}:${TAG} ."
             }
         }
-
         stage("push to dockerhub") {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: "dockerHUBCreds",
-                    usernameVariable: "dockerHUBUser",
-                    passwordVariable: "dockerHUBPass"
+                    credentialsId: "dockerhub_creds",
+                    usernameVariable: "U",
+                    passwordVariable: "P"
                 )]) {
-                    sh "echo $dockerHUBPass | docker login -u $dockerHUBUser --password-stdin"
-                    sh "docker image tag notes-app:latest ${env.dockerHUBUser}/notes-app:latest"
-                    sh "docker push ${env.dockerHUBUser}/notes-app:latest"
+                    sh "echo \"$P\" | docker login -u \"$U\" --password-stdin"
+                    sh "docker image tag ${IMAGE_NAME}:${TAG} $U/${IMAGE_NAME}:${TAG}"
+                    sh "docker push $U/${IMAGE_NAME}:${TAG}"
+                    sh "docker logout"
                 }
             }
         }
-
         stage("deploy") {
             steps {
                 sh "docker compose down || true"
-                sh "docker compose up -d --build"
+                sh "docker compose up -d --force-recreate"
             }
         }
     }
